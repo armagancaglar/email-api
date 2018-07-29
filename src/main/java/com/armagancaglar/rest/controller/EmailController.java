@@ -29,6 +29,7 @@ public class EmailController {
 	@Autowired
 	private EmailService emailService;
 
+	//Sending XML bulk to feth urls and emails
 	@RequestMapping(path="/send-xml",method=RequestMethod.POST, consumes= "application/xml", produces="application/xml")
 	public void send(@RequestBody Dataset dataset) {
 		List<String> uList = dataset.getResources();		
@@ -37,6 +38,7 @@ public class EmailController {
 		}
 	}
 	
+	//Lists all emails
 	@RequestMapping(path="/list-all-emails",method=RequestMethod.GET)
 	public String getAllEmails() {
 		List<Email> eList = emailService.findAll();
@@ -45,16 +47,19 @@ public class EmailController {
 		.collect(Collectors.joining("\n"));
 	}
 	
+	//Get Count of email
 	@RequestMapping(path="/get-email-count", method=RequestMethod.GET)
 	private Long getNumberOfEmails(){
 	    return emailService.getCount();
 	}
 	
+	//Get single email occurence count
 	@RequestMapping(path="/get-single-email-count/{email}",method=RequestMethod.GET)
 	public int getCustomer(@PathVariable("email") String email) {
 		return emailService.countByEmail(email);
 	}	
 	
+	//Create single email
 	@RequestMapping(path="/create/{email}",method=RequestMethod.POST)
 	public void send(@PathVariable("email") String email) {
 		if(emailValidator(email)) {
@@ -62,6 +67,7 @@ public class EmailController {
 		}
 	}
 	
+	//Get single email by id
 	@RequestMapping(path="/get-email/{id}",method=RequestMethod.GET)
 	public String getAnEmailById(@PathVariable("id") int id) {
 		Email email = emailService.findByEmailId(id);
@@ -71,6 +77,7 @@ public class EmailController {
 		return "Email does not found";
 	}
 	
+	//Delete single email by id
 	@RequestMapping(path="/delete/{id}", method=RequestMethod.DELETE)
 	public void deleteEmail(@PathVariable("id") int id) {
 		Email email = emailService.findByEmailId(id);
@@ -79,6 +86,8 @@ public class EmailController {
 		}		
 	}
 	
+	//Update an email by id
+	//Replaces email with given variable
 	@RequestMapping(path="/update/{id}/{updateEmail}", method=RequestMethod.PATCH)
 	public void updateEmail(@PathVariable("id") int id, @PathVariable("updateEmail") String updateEmail) {
 		if(emailValidator(updateEmail)) {
@@ -86,6 +95,7 @@ public class EmailController {
 		}		
 	}
 	
+	//Email validator dropping invalid emails and unwanted domains
 	public boolean emailValidator(String email) {
 		Pattern p = Pattern.compile("^[a-zA-Z0-9._-]+@+(comeon.com|cherry.se)");
 		Matcher m = p.matcher(email);		
@@ -101,6 +111,7 @@ public class EmailController {
 		return false;
 	}
 	
+	//Save email method that saves emails to database
 	public void saveEmail(String item) {
 		if(emailValidator(item)) {
 			Email email = new Email();
@@ -109,6 +120,7 @@ public class EmailController {
 		}
 	}
 	
+	//Fetches emails from given urls
 	public void fetchEmailFromUrl(String item) {
 		RestTemplate restTemplate = new RestTemplate();		
 		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
@@ -118,6 +130,7 @@ public class EmailController {
 		}		 
 	}
 	
+	//Fetches Urls from Urls and saves emails in XML
 	public void fetchUrlFromUrl(String item) {
 		RestTemplate restTemplate = new RestTemplate();		
 		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
@@ -129,7 +142,7 @@ public class EmailController {
 		fetchEmailFromUrl(item);
 	}
 
-	
+	//TEST XML SERVİCES
 	@RequestMapping(path="/test-getxml",method=RequestMethod.GET, produces="application/xml")
 	public Dataset getXML() {
 		Dataset dataset = new Dataset();
@@ -167,4 +180,5 @@ public class EmailController {
 		dataset.setEmails(eList);
 		return dataset;
 	}
+	//END OF TEST XML SERVICES
 }

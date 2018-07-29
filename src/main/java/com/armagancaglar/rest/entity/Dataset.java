@@ -5,7 +5,7 @@ import java.util.List;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-
+//Dataset for getting datas from XML
 @XmlRootElement(name = "dataset")
 public class Dataset {
 	  

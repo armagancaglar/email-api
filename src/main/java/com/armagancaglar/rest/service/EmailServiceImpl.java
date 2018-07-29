@@ -14,36 +14,39 @@ public class EmailServiceImpl implements EmailService {
 
 	@Autowired
 	private EmailRepository emailRepository;
+	
+	//List all emails which email field is equals to given criteria
 	@Override
 	public List<Email> findByEmail(String email) {
-		// TODO Auto-generated method stub
 		List<Email> eList = (List<Email>) emailRepository.findByEmail(email);
 		return eList;
 	}
 
+	//Save email to db
 	@Override
 	public void saveEmail(Email email) {
-		// TODO Auto-generated method stub
 		emailRepository.save(email);
 	}
 
+	//Get all emails from db
 	@Override
 	public List<Email> findAll() {
-		// TODO Auto-generated method stub
 		return emailRepository.findAll();
 	}
 
+	//Get all item count 
 	@Override
 	public Long getCount() {
 		return emailRepository.count();
 	}
 
+	//Count email occurence
 	@Override
 	public int countByEmail(String email) {
-		// TODO Auto-generated method stub
 		return emailRepository.countByEmail(email);
 	}
 
+	//Update email by given id and replace email with given email
 	@Override
 	public void updateByEmailId(int id, String email) {
 		Email mail = emailRepository.findById(id);
@@ -51,11 +54,12 @@ public class EmailServiceImpl implements EmailService {
 		emailRepository.save(mail);
 	}
 
+	//Find email by id
 	@Override
 	public Email findByEmailId(int id) {
 		return emailRepository.findById(id);
 	}
-
+	//Delete given email from db
 	@Override
 	public void deleteEmail(Email email) {
 		emailRepository.delete(email);
