@@ -31,16 +31,25 @@ public class EmailController {
 
 	//Sending XML bulk to feth urls and emails
 	@RequestMapping(path="/send-xml",method=RequestMethod.POST, consumes= "application/xml", produces="application/xml")
-	public void send(@RequestBody Dataset dataset) {
-		List<String> uList = dataset.getResources();		
-		for(String url : uList) {
-			fetchUrlFromUrl(url);
+	public void sendXML(@RequestBody Dataset dataset) {	
+		//Fetching all urls
+		if(dataset.getResources() != null) {
+			for(String url : dataset.getResources()) {
+				fetchUrlFromUrl(url);
+			}
 		}
+		//Fetchine emails in first XML
+		if(dataset.getEmails() != null) {
+			for(String email : dataset.getEmails()) {
+				saveEmail(email);
+			}
+		}
+		
 	}
 	
 	//Lists all emails
 	@RequestMapping(path="/list-all-emails",method=RequestMethod.GET)
-	public String getAllEmails() {
+	public String listAllEmails() {
 		List<Email> eList = emailService.findAll();
 		return eList.stream()
 		.map(e -> e.getEmail().toString())
@@ -49,19 +58,19 @@ public class EmailController {
 	
 	//Get Count of email
 	@RequestMapping(path="/get-email-count", method=RequestMethod.GET)
-	private Long getNumberOfEmails(){
+	private Long getEmailCount(){
 	    return emailService.getCount();
 	}
 	
 	//Get single email occurence count
 	@RequestMapping(path="/get-single-email-count/{email}",method=RequestMethod.GET)
-	public int getCustomer(@PathVariable("email") String email) {
+	public int getSingleEmailCount(@PathVariable("email") String email) {
 		return emailService.countByEmail(email);
 	}	
 	
 	//Create single email
 	@RequestMapping(path="/create/{email}",method=RequestMethod.POST)
-	public void send(@PathVariable("email") String email) {
+	public void createEmail(@PathVariable("email") String email) {
 		if(emailValidator(email)) {
 			saveEmail(email);
 		}
@@ -69,7 +78,7 @@ public class EmailController {
 	
 	//Get single email by id
 	@RequestMapping(path="/get-email/{id}",method=RequestMethod.GET)
-	public String getAnEmailById(@PathVariable("id") int id) {
+	public String getEmailById(@PathVariable("id") int id) {
 		Email email = emailService.findByEmailId(id);
 		if(email != null) {
 			return email.getEmail();
