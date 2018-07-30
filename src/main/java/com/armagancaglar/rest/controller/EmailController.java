@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +21,8 @@ import org.springframework.web.client.RestTemplate;
 import com.armagancaglar.rest.entity.Dataset;
 import com.armagancaglar.rest.model.Email;
 import com.armagancaglar.rest.service.EmailService;
+import com.armagancaglar.rest.utils.Utility;
+
 
 
 @RestController
@@ -31,102 +35,99 @@ public class EmailController {
 
 	//Sending XML bulk to feth urls and emails
 	@RequestMapping(path="/send-xml",method=RequestMethod.POST, consumes= "application/xml", produces="application/xml")
-	public void sendXML(@RequestBody Dataset dataset) {	
+	public ResponseEntity<?> sendXML(@RequestBody Dataset dataset) {	
 		//Fetching all urls
 		if(dataset.getResources() != null) {
 			for(String url : dataset.getResources()) {
 				fetchUrlFromUrl(url);
 			}
 		}
-		//Fetchine emails in first XML
+		//Fetching emails in first XML
 		if(dataset.getEmails() != null) {
 			for(String email : dataset.getEmails()) {
 				saveEmail(email);
 			}
-		}
-		
+		}		
+		return new ResponseEntity<>("All emails are fetched",HttpStatus.OK);
 	}
 	
 	//Lists all emails
 	@RequestMapping(path="/list-all-emails",method=RequestMethod.GET)
-	public String listAllEmails() {
+	public ResponseEntity<String> listAllEmails() {
 		List<Email> eList = emailService.findAll();
-		return eList.stream()
-		.map(e -> e.getEmail().toString())
-		.collect(Collectors.joining("\n"));
+		if(!eList.isEmpty()) {
+			return new ResponseEntity<>(eList.stream()
+					.map(e -> e.getEmail().toString())
+					.collect(Collectors.joining("\n")), HttpStatus.OK);	
+		}
+		return new ResponseEntity<>("There is no email", HttpStatus.NOT_FOUND);
 	}
 	
 	//Get Count of email
 	@RequestMapping(path="/get-email-count", method=RequestMethod.GET)
-	private Long getEmailCount(){
-	    return emailService.getCount();
+	private ResponseEntity<?> getEmailCount(){
+	    return new ResponseEntity<>(emailService.getCount(), HttpStatus.OK);
 	}
 	
 	//Get single email occurence count
 	@RequestMapping(path="/get-single-email-count/{email}",method=RequestMethod.GET)
-	public int getSingleEmailCount(@PathVariable("email") String email) {
-		return emailService.countByEmail(email);
+	public ResponseEntity<?> getSingleEmailCount(@PathVariable("email") String email) {
+		return new ResponseEntity<>(emailService.countByEmail(email), HttpStatus.OK);
 	}	
 	
 	//Create single email
 	@RequestMapping(path="/create/{email}",method=RequestMethod.POST)
-	public void createEmail(@PathVariable("email") String email) {
-		if(emailValidator(email)) {
-			saveEmail(email);
+	public ResponseEntity<?> createEmail(@PathVariable("email") String email) {
+		if(Utility.emailValidator(email)) {
+			return new ResponseEntity<>(saveEmail(email), HttpStatus.CREATED);
 		}
+		return new ResponseEntity<>("Email is not created", HttpStatus.NOT_ACCEPTABLE);
 	}
 	
 	//Get single email by id
 	@RequestMapping(path="/get-email/{id}",method=RequestMethod.GET)
-	public String getEmailById(@PathVariable("id") int id) {
+	public ResponseEntity<String> getEmailById(@PathVariable("id") int id) {
 		Email email = emailService.findByEmailId(id);
 		if(email != null) {
-			return email.getEmail();
+			return new ResponseEntity<>(email.getEmail(), HttpStatus.OK);
 		}
-		return "Email does not found";
+		return new ResponseEntity<>("Email does not found", HttpStatus.NOT_FOUND);
 	}
 	
 	//Delete single email by id
 	@RequestMapping(path="/delete/{id}", method=RequestMethod.DELETE)
-	public void deleteEmail(@PathVariable("id") int id) {
+	public ResponseEntity<Void> deleteEmail(@PathVariable("id") int id) {
 		Email email = emailService.findByEmailId(id);
 		if(email != null) {
-			emailService.deleteEmail(email);	
-		}		
+			emailService.deleteEmail(email);
+			return new ResponseEntity<Void>(HttpStatus.OK);
+		}
+		return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
 	}
 	
 	//Update an email by id
 	//Replaces email with given variable
 	@RequestMapping(path="/update/{id}/{updateEmail}", method=RequestMethod.PATCH)
-	public void updateEmail(@PathVariable("id") int id, @PathVariable("updateEmail") String updateEmail) {
-		if(emailValidator(updateEmail)) {
-			emailService.updateByEmailId(id, updateEmail);	
-		}		
+	public ResponseEntity<String> updateEmail(@PathVariable("id") int id, @PathVariable("updateEmail") String updateEmail) {
+		if(Utility.emailValidator(updateEmail)) {
+			if(emailService.updateByEmailId(id, updateEmail)) {
+				return new ResponseEntity<>("Email has been updated", HttpStatus.OK);	
+			} else {
+				return new ResponseEntity<>("Email Not Found", HttpStatus.NOT_FOUND);
+			}			
+		}	
+		return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 	}
-	
-	//Email validator dropping invalid emails and unwanted domains
-	public boolean emailValidator(String email) {
-		Pattern p = Pattern.compile("^[a-zA-Z0-9._-]+@+(comeon.com|cherry.se)");
-		Matcher m = p.matcher(email);		
-		/*if(EmailValidator.getInstance().isValid(email))
-			int atIndex = email.indexOf("@") + 1;
-			String domainValidation = email.substring(atIndex, email.length());
-			if(domainValidation.equals("comeon.com") || domainValidation.equals("cherry.se")) {
-				return true;
-			}*/
-		if(m.matches() && EmailValidator.getInstance().isValid(email)){
-			return true;
-		}
-		return false;
-	}
-	
+
 	//Save email method that saves emails to database
-	public void saveEmail(String item) {
-		if(emailValidator(item)) {
+	public String saveEmail(String item) {
+		if(Utility.emailValidator(item)) {
 			Email email = new Email();
 			email.setEmail(item);
 			emailService.saveEmail(email);
+			return "Email is created";
 		}
+		return "Email is not created";
 	}
 	
 	//Fetches emails from given urls
@@ -153,7 +154,7 @@ public class EmailController {
 
 	//TEST XML SERVİCES
 	@RequestMapping(path="/test-getxml",method=RequestMethod.GET, produces="application/xml")
-	public Dataset getXML() {
+	public ResponseEntity<Dataset> getXML() {
 		Dataset dataset = new Dataset();
 		List<String> eList = new ArrayList<String>();
 		eList.add("user1@comeon.com");
@@ -162,7 +163,7 @@ public class EmailController {
 
 		dataset.setResources(urlList);
 		dataset.setEmails(eList);
-		return dataset;
+		return new ResponseEntity<>(dataset, HttpStatus.OK);
 	}
 	
 	@RequestMapping(path="/test-getxml2",method=RequestMethod.GET, produces="application/xml")

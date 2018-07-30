@@ -12,7 +12,7 @@ public interface EmailService {
 	public Long getCount();
 	public int countByEmail(String email);
 	public Email findByEmailId(int id);
-	public void updateByEmailId(int id, String email);
+	public boolean updateByEmailId(int id, String email);
 	public void deleteEmail(Email email);
 
 }

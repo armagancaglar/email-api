@@ -48,10 +48,14 @@ public class EmailServiceImpl implements EmailService {
 
 	//Update email by given id and replace email with given email
 	@Override
-	public void updateByEmailId(int id, String email) {
+	public boolean updateByEmailId(int id, String email) {
 		Email mail = emailRepository.findById(id);
-		mail.setEmail(email);
-		emailRepository.save(mail);
+		if(mail != null) {
+			mail.setEmail(email);
+			emailRepository.save(mail);
+			return true;
+		}
+		return false;
 	}
 
 	//Find email by id
@@ -65,5 +69,4 @@ public class EmailServiceImpl implements EmailService {
 		emailRepository.delete(email);
 		
 	}
-
 }
