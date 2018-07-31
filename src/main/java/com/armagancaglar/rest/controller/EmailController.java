@@ -11,6 +11,9 @@ import org.apache.commons.validator.routines.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.retry.annotation.Backoff;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +30,7 @@ import com.armagancaglar.rest.utils.Utility;
 
 @RestController
 @RequestMapping("email")
+@EnableRetry
 public class EmailController {
 
 	static final String URL_EMAILS_XML = "http://localhost:8080/email/getxml";
@@ -35,6 +39,8 @@ public class EmailController {
 
 	//Sending XML bulk to feth urls and emails
 	@RequestMapping(path="/send-xml",method=RequestMethod.POST, consumes= "application/xml", produces="application/xml")
+	@Retryable(maxAttempts = 5, backoff = @Backoff(delay = 3000))
+	// TODO : CONFIGURABLE MAX ATTEMPTS
 	public ResponseEntity<?> sendXML(@RequestBody Dataset dataset) {	
 		//Fetching all urls
 		if(dataset.getResources() != null) {
@@ -49,6 +55,39 @@ public class EmailController {
 			}
 		}		
 		return new ResponseEntity<>("All emails are fetched",HttpStatus.OK);
+	}		
+	
+	//Fetches Urls from Urls and saves emails in XML
+	public void fetchUrlFromUrl(String item) {
+		RestTemplate restTemplate = new RestTemplate();		
+		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
+		if(dataset.getResources() != null) {
+			for(String url : dataset.getResources()) {
+				fetchUrlFromUrl(url);
+			}		
+		}
+		fetchEmailFromUrl(item);
+	}
+	
+	//Fetches emails from given urls
+	public void fetchEmailFromUrl(String item) {
+		RestTemplate restTemplate = new RestTemplate();		
+		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
+		List<String> eList = dataset.getEmails();		
+		for(String email : eList) {
+			saveEmail(email);
+		}		 
+	}
+	
+	//Save email method that saves emails to database
+	public String saveEmail(String item) {
+		if(Utility.emailValidator(item)) {
+			Email email = new Email();
+			email.setEmail(item);
+			emailService.saveEmail(email);
+			return "Email is created";
+		}
+		return "Email is not created";
 	}
 	
 	//Lists all emails
@@ -119,39 +158,6 @@ public class EmailController {
 		return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 	}
 
-	//Save email method that saves emails to database
-	public String saveEmail(String item) {
-		if(Utility.emailValidator(item)) {
-			Email email = new Email();
-			email.setEmail(item);
-			emailService.saveEmail(email);
-			return "Email is created";
-		}
-		return "Email is not created";
-	}
-	
-	//Fetches emails from given urls
-	public void fetchEmailFromUrl(String item) {
-		RestTemplate restTemplate = new RestTemplate();		
-		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
-		List<String> eList = dataset.getEmails();		
-		for(String email : eList) {
-			saveEmail(email);
-		}		 
-	}
-	
-	//Fetches Urls from Urls and saves emails in XML
-	public void fetchUrlFromUrl(String item) {
-		RestTemplate restTemplate = new RestTemplate();		
-		Dataset dataset = restTemplate.getForObject(item, Dataset.class);
-		if(dataset.getResources() != null) {
-			for(String url : dataset.getResources()) {
-				fetchUrlFromUrl(url);
-			}		
-		}
-		fetchEmailFromUrl(item);
-	}
-
 	//TEST XML SERVİCES
 	@RequestMapping(path="/test-getxml",method=RequestMethod.GET, produces="application/xml")
 	public ResponseEntity<Dataset> getXML() {
@@ -159,6 +165,8 @@ public class EmailController {
 		List<String> eList = new ArrayList<String>();
 		eList.add("user1@comeon.com");
 		List<String> urlList = new ArrayList<String>();
+		urlList.add("http://localhost:8080/email/test-getxml3");
+		urlList.add("http://localhost:8080/email/test-getxml3");
 		urlList.add("http://localhost:8080/email/test-getxml2");
 
 		dataset.setResources(urlList);
@@ -172,6 +180,7 @@ public class EmailController {
 		List<String> eList = new ArrayList<String>();
 		eList.add("user2@comeon.com");		
 		List<String> urlList = new ArrayList<String>();
+		urlList.add("http://localhost:8080/email/test-getxml3");
 		urlList.add("http://localhost:8080/email/test-getxml3");
 
 		dataset.setResources(urlList);
