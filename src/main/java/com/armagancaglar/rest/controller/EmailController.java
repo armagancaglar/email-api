@@ -27,19 +27,19 @@ import com.armagancaglar.rest.service.EmailService;
 import com.armagancaglar.rest.utils.Utility;
 
 
-
 @RestController
 @RequestMapping("email")
 @EnableRetry
 public class EmailController {
 
 	static final String URL_EMAILS_XML = "http://localhost:8080/email/getxml";
+	
 	@Autowired
 	private EmailService emailService;
 
 	//Sending XML bulk to feth urls and emails
 	@RequestMapping(path="/send-xml",method=RequestMethod.POST, consumes= "application/xml", produces="application/xml")
-	@Retryable(maxAttempts = 5, backoff = @Backoff(delay = 3000))
+	@Retryable(maxAttemptsExpression = "#{'${max.attempts}'}", backoff = @Backoff(delay = 3000))
 	// TODO : CONFIGURABLE MAX ATTEMPTS
 	public ResponseEntity<?> sendXML(@RequestBody Dataset dataset) {	
 		//Fetching all urls
@@ -57,6 +57,7 @@ public class EmailController {
 		return new ResponseEntity<>("All emails are fetched",HttpStatus.OK);
 	}		
 	
+	
 	//Fetches Urls from Urls and saves emails in XML
 	public void fetchUrlFromUrl(String item) {
 		RestTemplate restTemplate = new RestTemplate();		
@@ -69,6 +70,7 @@ public class EmailController {
 		fetchEmailFromUrl(item);
 	}
 	
+	
 	//Fetches emails from given urls
 	public void fetchEmailFromUrl(String item) {
 		RestTemplate restTemplate = new RestTemplate();		
@@ -78,6 +80,7 @@ public class EmailController {
 			saveEmail(email);
 		}		 
 	}
+	
 	
 	//Save email method that saves emails to database
 	public String saveEmail(String item) {
@@ -89,6 +92,7 @@ public class EmailController {
 		}
 		return "Email is not created";
 	}
+	
 	
 	//Lists all emails
 	@RequestMapping(path="/list-all-emails",method=RequestMethod.GET)
@@ -102,17 +106,20 @@ public class EmailController {
 		return new ResponseEntity<>("There is no email", HttpStatus.NOT_FOUND);
 	}
 	
+	
 	//Get Count of email
 	@RequestMapping(path="/get-email-count", method=RequestMethod.GET)
 	private ResponseEntity<?> getEmailCount(){
 	    return new ResponseEntity<>(emailService.getCount(), HttpStatus.OK);
 	}
 	
+	
 	//Get single email occurence count
 	@RequestMapping(path="/get-single-email-count/{email}",method=RequestMethod.GET)
 	public ResponseEntity<?> getSingleEmailCount(@PathVariable("email") String email) {
 		return new ResponseEntity<>(emailService.countByEmail(email), HttpStatus.OK);
 	}	
+	
 	
 	//Create single email
 	@RequestMapping(path="/create/{email}",method=RequestMethod.POST)
@@ -123,6 +130,7 @@ public class EmailController {
 		return new ResponseEntity<>("Email is not created", HttpStatus.NOT_ACCEPTABLE);
 	}
 	
+	
 	//Get single email by id
 	@RequestMapping(path="/get-email/{id}",method=RequestMethod.GET)
 	public ResponseEntity<String> getEmailById(@PathVariable("id") int id) {
@@ -132,6 +140,7 @@ public class EmailController {
 		}
 		return new ResponseEntity<>("Email does not found", HttpStatus.NOT_FOUND);
 	}
+	
 	
 	//Delete single email by id
 	@RequestMapping(path="/delete/{id}", method=RequestMethod.DELETE)
@@ -144,8 +153,9 @@ public class EmailController {
 		return new ResponseEntity<Void>(HttpStatus.NOT_FOUND);
 	}
 	
+	
 	//Update an email by id
-	//Replaces email with given variable
+	//Replaces email with given email
 	@RequestMapping(path="/update/{id}/{updateEmail}", method=RequestMethod.PATCH)
 	public ResponseEntity<String> updateEmail(@PathVariable("id") int id, @PathVariable("updateEmail") String updateEmail) {
 		if(Utility.emailValidator(updateEmail)) {
@@ -157,47 +167,4 @@ public class EmailController {
 		}	
 		return new ResponseEntity<>(HttpStatus.NOT_ACCEPTABLE);
 	}
-
-	//TEST XML SERVİCES
-	@RequestMapping(path="/test-getxml",method=RequestMethod.GET, produces="application/xml")
-	public ResponseEntity<Dataset> getXML() {
-		Dataset dataset = new Dataset();
-		List<String> eList = new ArrayList<String>();
-		eList.add("user1@comeon.com");
-		List<String> urlList = new ArrayList<String>();
-		urlList.add("http://localhost:8080/email/test-getxml3");
-		urlList.add("http://localhost:8080/email/test-getxml3");
-		urlList.add("http://localhost:8080/email/test-getxml2");
-
-		dataset.setResources(urlList);
-		dataset.setEmails(eList);
-		return new ResponseEntity<>(dataset, HttpStatus.OK);
-	}
-	
-	@RequestMapping(path="/test-getxml2",method=RequestMethod.GET, produces="application/xml")
-	public Dataset getXML2() {
-		Dataset dataset = new Dataset();
-		List<String> eList = new ArrayList<String>();
-		eList.add("user2@comeon.com");		
-		List<String> urlList = new ArrayList<String>();
-		urlList.add("http://localhost:8080/email/test-getxml3");
-		urlList.add("http://localhost:8080/email/test-getxml3");
-
-		dataset.setResources(urlList);
-		dataset.setEmails(eList);
-		return dataset;
-	}
-	
-	@RequestMapping(path="/test-getxml3",method=RequestMethod.GET, produces="application/xml")
-	public Dataset getXML3() {
-		Dataset dataset = new Dataset();
-		List<String> eList = new ArrayList<String>();
-		eList.add("user3@comeon.com");	
-		List<String> urlList = new ArrayList<String>();
-
-		dataset.setResources(urlList);
-		dataset.setEmails(eList);
-		return dataset;
-	}
-	//END OF TEST XML SERVICES
 }
