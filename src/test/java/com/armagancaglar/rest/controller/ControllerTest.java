@@ -35,6 +35,7 @@ public class ControllerTest {
 	private EmailRepository emailRepoMock;
 	
 	@Test
+	@Ignore
 	public void findAll_EmailsFound_ShoulReturnFoundEmails() throws Exception {
 		Email first = new Email();
 		first.setEmail("armagan@comeon.com");
