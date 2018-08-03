@@ -12,9 +12,9 @@ Example of Request XML
 		<email>user3@not-so-cool.com</email>
 	</emails>
 	<resources>
-		<url>http://localhost:8080/email/test-getxml</url>
-		<url>http://localhost:8080/email/test-getxml2</url>
-		<url>http://localhost:8080/email/test-getxml3</url>
+		<url>http://localhost:8080/dummy/test-getxml</url>
+		<url>http://localhost:8080/dummy/test-getxml2</url>
+		<url>http://localhost:8080/dummt/test-getxml3</url>
 	</resources>
   
 &lt;/dataset>
@@ -45,7 +45,7 @@ Example of Request XML
 **Example:** localhost:8080/email/get-email/80
 
 ### Get XML example
-**GET** localhost:8080/email/test-getxml
+**GET** localhost:8080/dummy/test-getxml
 
 ### Update single email
 **PATCH** localhost:8080/email/update/{id}/{email}
